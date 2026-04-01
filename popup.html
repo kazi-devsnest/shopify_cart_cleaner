@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shopify Cart Cleaner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #ff4d1c;
+      --accent-dim: rgba(255, 77, 28, 0.12);
+      --text: #f0f0f0;
+      --muted: #666;
+      --success: #22c55e;
+    }
+
+    body {
+      width: 300px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      padding: 20px;
+      user-select: none;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo svg {
+      width: 16px;
+      height: 16px;
+      fill: white;
+    }
+
+    .header-text h1 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .header-text p {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .url-section {
+      margin-bottom: 16px;
+    }
+
+    .url-label {
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .url-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .url-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+
+    .url-dot.inactive {
+      background: var(--muted);
+    }
+
+    .url-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .url-text.warning {
+      color: #f59e0b;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 16px;
+    }
+
+    /* Button */
+    .clear-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .clear-btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    .clear-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .clear-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .clear-btn.loading {
+      background: #333;
+      color: var(--muted);
+    }
+
+    .clear-btn.success {
+      background: var(--success);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .clear-btn.loading .spinner { display: block; }
+    .clear-btn.loading .btn-icon { display: none; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast {
+      margin-top: 12px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'IBM Plex Mono', monospace;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .toast.show { display: flex; }
+
+    .toast.toast-success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      color: var(--success);
+    }
+
+    .toast.toast-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+    }
+
+    .toast.toast-warn {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #f59e0b;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 7H16C16 4.24 13.76 2 11 2S6 4.24 6 7H3C2.45 7 2 7.45 2 8V20C2 21.1 2.9 22 4 22H18C19.1 22 20 21.1 20 20V8C20 7.45 19.55 7 19 7ZM11 4C12.65 4 14 5.35 14 7H8C8 5.35 9.35 4 11 4ZM18 20H4V9H6V11C6 11.55 6.45 12 7 12S8 11.55 8 11V9H14V11C14 11.55 14.45 12 15 12S16 11.55 16 11V9H18V20Z"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Cart Cleaner</h1>
+      <p>shopify utility</p>
+    </div>
+  </div>
+
+  <div class="url-section">
+    <div class="url-label">Current Store</div>
+    <div class="url-box">
+      <div class="url-dot" id="urlDot"></div>
+      <span class="url-text" id="urlText">loading...</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <button class="clear-btn" id="clearBtn">
+    <div class="spinner"></div>
+    <span class="btn-icon">🗑</span>
+    <span class="btn-label">Clear Cart</span>
+  </button>
+
+  <div class="toast" id="toast">
+    <span id="toastMsg"></span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
